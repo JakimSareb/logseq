@@ -6,7 +6,11 @@
   a page (frontend.modules.file.core/tree->file-content), without editing
   anything. The result must be identical to the original file.
 
-  The only normalization is trailing newlines at the end of the file.
+  Accepted normalizations (see docs/eli/ROADMAP.md, "Hallazgos de A3b"):
+  - trailing newlines at the end of the file;
+  - blank lines right before a headline (`* ...`): Logseq trims every block
+    and joins blocks with a single newline, so those lines are dropped.
+  Any other difference, including blank lines inside a block, is a failure.
 
   Run on its own with:
     node static/tests.js -n frontend.org-roundtrip-test"
@@ -25,9 +29,11 @@
 
 (def ^:private fixtures-dir "test-fixtures/org")
 
-(defn- strip-trailing-newlines
+(defn- normalize
   [s]
-  (string/replace s #"\n+$" ""))
+  (-> s
+      (string/replace #"\n+$" "")
+      (string/replace #"\n\n+(?=\*+ )" "\n")))
 
 (defn- read-fixtures
   "Reads every .org file of the fixtures dir as a file map, like the ones the
@@ -70,8 +76,8 @@
       (testing path
         (let [saved (save-file-content path)]
           (is (some? saved) (str "no page was created from " path))
-          (is (= (strip-trailing-newlines content)
-                 (some-> saved strip-trailing-newlines))))))))
+          (is (= (normalize content)
+                 (some-> saved normalize))))))))
 
 (deftest save-is-stable-after-reopening
   (testing "opening the saved content and saving it again gives the same text"
@@ -84,5 +90,5 @@
           _ (test-helper/load-test-files first-pass)]
       (doseq [{:file/keys [path content]} first-pass]
         (testing path
-          (is (= (strip-trailing-newlines content)
-                 (some-> (save-file-content path) strip-trailing-newlines))))))))
+          (is (= (normalize content)
+                 (some-> (save-file-content path) normalize))))))))

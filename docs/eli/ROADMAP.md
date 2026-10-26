@@ -28,7 +28,7 @@ Fork de Logseq 0.10.15 (grafo de ficheros). Rama de trabajo: `mi-rama-0.10.15`.
 | A2 | Actualizador apuntando al fork (no al Logseq original) | hecho |
 | A3 | Validación con Emacs + org-roam + org-ql en CI | hecho y verificado |
 | A4 | Publicación automática de la web en GitHub Pages | en curso |
-| A3b | Tests de ida y vuelta (abrir, guardar, sin cambios) | en curso: test `src/test/frontend/org_roundtrip_test.cljs` y workflow `org-roundtrip.yml` funcionan en CI; `otra-pagina.org` y la estabilidad al reabrir pasan, `pagina-ejemplo.org` falla (ver "Hallazgos de A3b") |
+| A3b | Tests de ida y vuelta (abrir, guardar, sin cambios) | hecho al pasar los checks del PR #4 |
 | B4 | Org como formato por defecto | pendiente |
 | B5 | Propiedades nativas (`#+title`, `#+filetags`, `:ID:`) | pendiente |
 | B6 | Enlaces por ID `[[id:UUID][Título]]` | pendiente |
@@ -55,12 +55,13 @@ Fork de Logseq 0.10.15 (grafo de ficheros). Rama de trabajo: `mi-rama-0.10.15`.
   `...página.\n* Bloque`): `tree->file-content` recorta el contenido de cada bloque y los une
   con un solo `\n`. No cambia el significado en org, pero el primer guardado de cualquier
   página escrita a mano en Emacs genera diferencias de espacios en blanco.
+- Decisión de Eli (26-oct-2026): se acepta esa normalización. El test ignora solo las líneas
+  en blanco justo antes de una cabecera `* ...` y los saltos de línea finales; cualquier otra
+  diferencia (p. ej. líneas en blanco dentro de un bloque) sigue siendo un fallo.
 - Guardar es estable: lo guardado, al reabrirlo y guardarlo otra vez, no cambia más.
 
 ## Decisiones pendientes
 
-- Línea en blanco entre bloques al guardar en org: conservarla (cambio en
-  `frontend.modules.file.core`, dentro de B4) o aceptar la normalización y ajustar el test.
 
 - Esquema de versiones del fork. El actualizador y `frontend.version` esperan semver
   estricto `X.Y.Z`; un sufijo como `-eli.1` rompería la comprobación.
