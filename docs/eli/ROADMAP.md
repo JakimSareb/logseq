@@ -20,23 +20,49 @@ Fork de Logseq 0.10.15 (grafo de ficheros). Rama de trabajo: `mi-rama-0.10.15`.
   Requiere activar una vez Settings > Pages > Source: GitHub Actions.
 - Cada cambio se hace en una rama `eli/...` y entra por PR a `mi-rama-0.10.15`.
 
-## Fases
+## Fases y versiones
 
-| Fase | Contenido | Estado |
-|------|-----------|--------|
-| A1 | CI en la rama del fork | hecho y verificado |
-| A2 | Actualizador apuntando al fork (no al Logseq original) | hecho |
-| A3 | Validación con Emacs + org-roam + org-ql en CI | hecho y verificado |
-| A4 | Publicación automática de la web en GitHub Pages | en curso |
-| A3b | Tests de ida y vuelta (abrir, guardar, sin cambios) | hecho y verificado (PR #4) |
-| B4 | Org como formato por defecto | pendiente |
-| B5 | Propiedades nativas (`#+title`, `#+filetags`, `:ID:`) | pendiente |
-| B6 | Enlaces por ID `[[id:UUID][Título]]` | pendiente |
-| B7 | Conversor en Ajustes | pendiente |
-| B8 | TODO, SCHEDULED, DEADLINE, etiquetas de cabecera | pendiente |
-| C9 | Diarios en hoja anual | pendiente (requiere diseño) |
-| D10 | Carpeta local / Dropbox (ficheros "conflicted copy") | pendiente |
-| E11-13 | org-roam-ui/dailies/journal, org-transclusion, pdf-tools + org-noter | pendiente |
+Cada fase se publica con su versión. Se dice "Adelante 1.01" y se hace la fila de esa
+versión (ver "Cómo se trabaja con versiones" más abajo).
+
+| Versión | Fase | Contenido | Estado |
+|---------|------|-----------|--------|
+| 1.0 | A1 | CI en la rama del fork | hecho y verificado |
+| 1.0 | A2 | Actualizador apuntando al fork (no al Logseq original) | hecho |
+| 1.0 | A3 | Validación con Emacs + org-roam + org-ql en CI | hecho y verificado |
+| 1.0 | A3b | Tests de ida y vuelta (abrir, guardar, sin cambios) | hecho y verificado (PR #4) |
+| 1.0 | A4 | Publicación automática de la web en GitHub Pages | despliegue manual correcto el 26-oct; falta confirmar el automático al fusionar |
+| 1.01 | B4 | Org como formato por defecto (y ampliar fixtures: subniveles, DEADLINE, etiquetas de cabecera) | pendiente |
+| 1.02 | B5 | Propiedades nativas (`#+title`, `#+filetags`, `:ID:`) | pendiente |
+| 1.03 | B6 | Enlaces por ID `[[id:UUID][Título]]` | pendiente |
+| 1.04 | B7 | Conversor en Ajustes | pendiente |
+| 1.05 | B8 | TODO, SCHEDULED, DEADLINE, etiquetas de cabecera | pendiente |
+| 1.06 | C9 | Diarios en hoja anual compatible con org-journal | pendiente (formato decidido, ver abajo) |
+| 1.07 | D10 | Carpeta local / Dropbox (ficheros "conflicted copy") | pendiente |
+| 1.08 | E11 | org-roam-ui, org-roam-dailies / org-journal, org-agenda | pendiente |
+| 1.09 | E12 | org-transclusion | pendiente |
+| 1.10 | E13 | pdf-tools + org-noter | pendiente |
+
+## Cómo se trabaja con versiones
+
+- Esquema de versiones (decisión de Eli): empieza en 1.0 y sube con dos decimales:
+  1.01, 1.02, ... 1.10, 1.11, etc.
+- El actualizador (`semver`) exige `X.Y.Z` estricto, así que el número "de Eli" se traduce
+  al técnico así: `1.0` -> `1.0.0`, `1.01` -> `1.0.1`, `1.10` -> `1.0.10`, `1.25` -> `1.0.25`.
+  Valen hasta 1.99; después se decidirá.
+- La versión técnica vive en dos sitios que se cambian juntos: `resources/package.json`
+  (`version`) y `src/main/frontend/version.cljs` (`version`).
+- Cada fase termina con su versión subida en el mismo PR, con el ROADMAP actualizado
+  (estado y, si hay, hallazgos) y el PR fusionado cuando los checks estén en verde.
+- Subir la versión no compila ni publica instaladores; eso solo se hace si Eli lo pide.
+
+## Formato de la hoja anual (decisión de Eli)
+
+- Debe ser compatible con org-journal en modo anual (`org-journal-file-type` = `yearly`):
+  un único `.org` por año con los días dentro, en lugar de un fichero por día.
+- El detalle exacto (nombre del fichero, cabecera del año, formato del título de cada día
+  y de las entradas con hora) se fija al empezar 1.06 comprobándolo con org-journal
+  instalado en el CI de Emacs (`scripts/emacs/validate.el`), no de memoria.
 
 ## Estado conocido del CI
 
@@ -62,6 +88,4 @@ Fork de Logseq 0.10.15 (grafo de ficheros). Rama de trabajo: `mi-rama-0.10.15`.
 
 ## Decisiones pendientes
 
-- Esquema de versiones del fork. El actualizador y `frontend.version` esperan semver
-  estricto `X.Y.Z`; un sufijo como `-eli.1` rompería la comprobación.
-- Formato exacto de la hoja anual (se confirma al empezar la fase C).
+Ninguna por ahora.
