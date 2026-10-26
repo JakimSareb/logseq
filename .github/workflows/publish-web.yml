@@ -1,0 +1,126 @@
+name: Publish web (GitHub Pages)
+
+# Builds the Logseq web app and publishes it to GitHub Pages every time
+# mi-rama-0.10.15 changes (for example when a PR is merged).
+# On pull requests it only builds, to check that the web still compiles.
+#
+# One-time setup in the repository: Settings > Pages > Build and deployment >
+# Source: "GitHub Actions".
+
+on:
+  push:
+    branches: [mi-rama-0.10.15]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'test-fixtures/**'
+      - 'scripts/emacs/**'
+      - '.github/workflows/emacs-validate.yml'
+  pull_request:
+    branches: [mi-rama-0.10.15]
+    paths:
+      - '.github/workflows/publish-web.yml'
+  workflow_dispatch:
+
+env:
+  CLOJURE_VERSION: '1.11.1.1413'
+  NODE_VERSION: '22'
+  JAVA_VERSION: '17'
+
+concurrency:
+  group: publish-web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # to leave a commit comment if the build fails
+      pull-requests: write   # to leave a PR comment if the build fails
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Install Node.js and Yarn
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Clojure
+        uses: DeLaGuardo/setup-clojure@10.1
+        with:
+          cli: ${{ env.CLOJURE_VERSION }}
+
+      - name: Clojure cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+          key: ${{ runner.os }}-clojure-deps-${{ hashFiles('deps.edn') }}
+          restore-keys: ${{ runner.os }}-clojure-deps-
+
+      - name: Fetch yarn deps
+        run: yarn install --frozen-lockfile
+
+      # The asset path is relative so the app also works under
+      # https://<user>.github.io/<repo>/ and does not load code from the
+      # original Logseq CDN (the default for release builds).
+      - name: Build web app
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          (
+            set -e
+            yarn gulp:build
+            clojure -M:cljs release app --config-merge '{:asset-path "./js" :release {:asset-path "./js"} :compiler-options {:source-map-include-sources-content false :source-map-detail-level :symbols}}'
+            test -f static/index.html
+            test -f static/js/main.js
+            rm -f static/js/*.map
+            touch static/.nojekyll
+          ) 2>&1 | tee build.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            {
+              echo '**Web build failed** (last lines of the output):'
+              echo '```'
+              tail -n 80 build.log
+              echo '```'
+            } > build-comment.md
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+                -F body=@build-comment.md || true
+            else
+              gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" \
+                -F body=@build-comment.md || true
+            fi
+          fi
+          exit "$status"
+
+      - name: Upload site
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: static
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
