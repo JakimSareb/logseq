@@ -27,3 +27,15 @@ Si Eli escribe "Adelante 1.01" (o cualquier otra versión de la tabla del ROADMA
 5. Si algo falla, arréglalo y vuelve a comprobar; si hace falta una decisión de Eli,
    para y pregúntale lo justo.
 6. Al terminar, di en pocas líneas qué cambió y cuál es la siguiente versión.
+
+### Rangos: "Adelante 1.01-1.03"
+
+Si Eli pide un rango, haz las versiones en orden en la misma rama y el mismo PR:
+
+- un commit por versión, cada uno con su subida de versión técnica y su fila del ROADMAP
+  marcada como hecha (la versión final del rango es la que queda en `package.json`);
+- espera los checks y fusiona una sola vez, al terminar el rango;
+- si una versión del rango falla en CI y no se puede arreglar, para ahí: fusiona solo hasta
+  la última versión en verde (o deja el PR abierto) y explica qué quedó sin hacer.
+
+Los grupos recomendados están en "Grupos de versiones" del ROADMAP.
