@@ -1,0 +1,119 @@
+name: Org round-trip tests
+
+# A3b: opens every org file in test-fixtures/org, saves it again without
+# changes and checks that the text is identical. On failure the output is
+# posted as a comment in the PR (Actions logs are not readable from the
+# working session).
+
+on:
+  push:
+    branches: [master, mi-rama-0.10.15]
+    paths:
+      - 'test-fixtures/org/**'
+      - 'src/test/frontend/org_roundtrip_test.cljs'
+      - 'src/main/frontend/modules/file/**'
+      - 'src/main/frontend/modules/outliner/**'
+      - 'deps/graph-parser/src/**'
+      - '.github/workflows/org-roundtrip.yml'
+  pull_request:
+    branches: [master, mi-rama-0.10.15]
+    paths:
+      - 'test-fixtures/org/**'
+      - 'src/test/frontend/org_roundtrip_test.cljs'
+      - 'src/main/frontend/modules/file/**'
+      - 'src/main/frontend/modules/outliner/**'
+      - 'deps/graph-parser/src/**'
+      - '.github/workflows/org-roundtrip.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  CLOJURE_VERSION: '1.11.1.1413'
+  JAVA_VERSION: '11'
+  NODE_VERSION: '22'
+
+jobs:
+  org-roundtrip:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: |
+            yarn.lock
+            static/yarn.lock
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Clojure
+        uses: DeLaGuardo/setup-clojure@10.1
+        with:
+          cli: ${{ env.CLOJURE_VERSION }}
+
+      - name: Clojure cache
+        uses: actions/cache@v4
+        id: clojure-deps
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+          key: ${{ runner.os }}-clojure-deps-${{ hashFiles('deps.edn') }}
+          restore-keys: ${{ runner.os }}-clojure-deps-
+
+      - name: Fetch Clojure deps
+        if: steps.clojure-deps.outputs.cache-hit != 'true'
+        run: clojure -A:cljs -P
+
+      - name: Fetch yarn deps
+        run: yarn install --frozen-lockfile
+
+      - name: Compile tests
+        run: |
+          set +e
+          yarn cljs:test 2>&1 | tee compile-output.txt
+          status=${PIPESTATUS[0]}
+          echo "COMPILE_STATUS=$status" >> "$GITHUB_ENV"
+          exit "$status"
+
+      - name: Run round-trip tests
+        run: |
+          set +e
+          node static/tests.js -n frontend.org-roundtrip-test 2>&1 | tee roundtrip-output.txt
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            {
+              echo '**Org round-trip tests failed** (last lines of the output):'
+              echo '```'
+              tail -n 80 roundtrip-output.txt
+              echo '```'
+            } > roundtrip-comment.md
+          fi
+          exit "$status"
+
+      - name: Comment on the PR when something fails
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ ! -f roundtrip-comment.md ]; then
+            {
+              echo '**Org round-trip workflow failed before running the tests** (last lines of the compile output):'
+              echo '```'
+              tail -n 60 compile-output.txt 2>/dev/null
+              echo '```'
+            } > roundtrip-comment.md
+          fi
+          gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+            -F body=@roundtrip-comment.md || true
