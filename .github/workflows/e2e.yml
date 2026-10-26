@@ -6,11 +6,11 @@ name: E2E
 
 on:
   push:
-    branches: [master]
+    branches: [master, mi-rama-0.10.15]
     paths:
       - 'e2e-tests/**'
   pull_request:
-    branches: [master]
+    branches: [master, mi-rama-0.10.15]
     paths:
       - 'e2e-tests/**'
 

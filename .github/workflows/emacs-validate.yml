@@ -1,0 +1,43 @@
+name: Org compatibility (Emacs)
+
+# Installs Emacs on the GitHub runner and checks that the org files in
+# test-fixtures/org work with org-mode, org-roam and org-ql.
+
+on:
+  push:
+    branches: [master, mi-rama-0.10.15]
+    paths:
+      - 'test-fixtures/org/**'
+      - 'scripts/emacs/**'
+      - '.github/workflows/emacs-validate.yml'
+  pull_request:
+    branches: [master, mi-rama-0.10.15]
+    paths:
+      - 'test-fixtures/org/**'
+      - 'scripts/emacs/**'
+      - '.github/workflows/emacs-validate.yml'
+  workflow_dispatch:
+
+jobs:
+  emacs-validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Emacs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y emacs-nox
+          emacs --version | head -1
+
+      - name: Cache Emacs packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/logseq-eli-elpa
+          key: elpa-v1-${{ runner.os }}
+
+      - name: Validate org files
+        env:
+          FIXTURES_DIR: test-fixtures/org
+        run: emacs --batch -l scripts/emacs/validate.el

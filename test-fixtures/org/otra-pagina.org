@@ -1,0 +1,7 @@
+:PROPERTIES:
+:ID:       9a23cc09-4bde-44ad-94dc-0de23a4b9537
+:END:
+#+title: Otra página
+#+filetags: :ejemplo:
+
+Vuelvo a la [[id:0004dbd9-bb4a-4cdd-87f2-e5b796a6d497][Página de ejemplo]] y enlazo al bloque [[id:5f44ccaf-e83d-4ed2-b77a-ceb6d05e682b][Tarea programada]].
