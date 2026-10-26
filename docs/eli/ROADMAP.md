@@ -43,6 +43,22 @@ versión (ver "Cómo se trabaja con versiones" más abajo).
 | 1.09 | E12 | org-transclusion | pendiente |
 | 1.10 | E13 | pdf-tools + org-noter | pendiente |
 
+## Grupos de versiones
+
+Para gastar menos, las versiones que tocan el mismo código se piden juntas
+("Adelante 1.01-1.03"). Cada versión se marca por separado en la tabla y sube la versión
+técnica en su propio commit; el PR se fusiona una sola vez, al final del grupo.
+
+| Grupo | Versiones | Motivo |
+|-------|-----------|--------|
+| 1 | 1.01 a 1.03 (B4, B5, B6) | Formato org por defecto, propiedades y enlaces por ID tocan el mismo guardado y los mismos fixtures |
+| 2 | 1.04 y 1.05 (B7, B8) | El conversor necesita las reglas de TODO, SCHEDULED y etiquetas |
+| 3 | 1.06 (C9) | Diseño propio de la hoja anual, validado con org-journal |
+| 4 | 1.07 (D10) | Dropbox y "conflicted copy": tema aparte |
+| 5 | 1.08 a 1.10 (E11-E13) | Integraciones con Emacs, casi independientes del código de Logseq |
+
+Se puede pedir una versión suelta o un grupo distinto; estos son los recomendados.
+
 ## Cómo se trabaja con versiones
 
 - Esquema de versiones (decisión de Eli): empieza en 1.0 y sube con dos decimales:
