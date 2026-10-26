@@ -16,6 +16,8 @@ Fork de Logseq 0.10.15 (grafo de ficheros). Rama de trabajo: `mi-rama-0.10.15`.
 
 - Las pruebas corren en GitHub Actions (en el entorno de trabajo no hay Clojure).
 - No se compila ni se publica ningún instalador hasta que Eli lo pida.
+- La web se publica sola en GitHub Pages al fusionar un PR (`publish-web.yml`).
+  Requiere activar una vez Settings > Pages > Source: GitHub Actions.
 - Cada cambio se hace en una rama `eli/...` y entra por PR a `mi-rama-0.10.15`.
 
 ## Fases
@@ -25,6 +27,7 @@ Fork de Logseq 0.10.15 (grafo de ficheros). Rama de trabajo: `mi-rama-0.10.15`.
 | A1 | CI en la rama del fork | hecho y verificado |
 | A2 | Actualizador apuntando al fork (no al Logseq original) | hecho |
 | A3 | Validación con Emacs + org-roam + org-ql en CI | hecho y verificado |
+| A4 | Publicación automática de la web en GitHub Pages | en curso |
 | A3b | Tests de ida y vuelta (abrir, guardar, sin cambios) | pendiente |
 | B4 | Org como formato por defecto | pendiente |
 | B5 | Propiedades nativas (`#+title`, `#+filetags`, `:ID:`) | pendiente |

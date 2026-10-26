@@ -7,6 +7,8 @@ antes de empezar: contiene objetivos, fases y estado.
 - No hay Clojure en el entorno de trabajo: las pruebas se apoyan en GitHub Actions.
   Comprueba el resultado de los checks del PR antes de dar un cambio por bueno.
 - No compilar instaladores ni lanzar workflows de release salvo petición expresa.
+  Excepción pedida por Eli: la web se publica sola en GitHub Pages al fusionar un PR
+  (`.github/workflows/publish-web.yml`).
 - Ficheros de ejemplo org en `test-fixtures/org/`; se validan con Emacs en
   `.github/workflows/emacs-validate.yml` (script: `scripts/emacs/validate.el`).
 - Mantén el estado de `docs/eli/ROADMAP.md` al día al terminar cada fase.
