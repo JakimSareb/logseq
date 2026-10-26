@@ -56,6 +56,12 @@
   (eli-fail "no .org files found in %s" eli-dir))
 
 ;; 1. Every file parses and is lint-clean
+;; Register every ID first, like org-roam does in a real setup, so that
+;; org-lint can resolve [[id:...]] links between files.
+(require 'org-id)
+(setq org-id-locations-file (make-temp-file "org-id-locations"))
+(org-id-update-id-locations eli-files)
+
 (dolist (f eli-files)
   (with-current-buffer (find-file-noselect f)
     (org-mode)
