@@ -16,4 +16,4 @@ deleteable = "deleteable"
 fom = "fom"
 tne = "tne"
 [files]
-extend-exclude = ["resources/*", "src/resources/*"]
+extend-exclude = ["resources/*", "src/resources/*", "CLAUDE.md", "docs/eli/*", "test-fixtures/*"]
