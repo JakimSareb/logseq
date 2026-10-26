@@ -40,4 +40,13 @@ jobs:
       - name: Validate org files
         env:
           FIXTURES_DIR: test-fixtures/org
-        run: emacs --batch -l scripts/emacs/validate.el
+        run: |
+          set +e
+          emacs --batch -l scripts/emacs/validate.el 2>&1 | tee emacs-output.txt
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            # Publish the output tail as an annotation so it can be read through the API
+            msg=$(tail -n 60 emacs-output.txt | sed -e 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=Emacs validation failed::$msg"
+          fi
+          exit "$status"
