@@ -28,7 +28,7 @@ Fork de Logseq 0.10.15 (grafo de ficheros). Rama de trabajo: `mi-rama-0.10.15`.
 | A2 | Actualizador apuntando al fork (no al Logseq original) | hecho |
 | A3 | Validación con Emacs + org-roam + org-ql en CI | hecho y verificado |
 | A4 | Publicación automática de la web en GitHub Pages | en curso |
-| A3b | Tests de ida y vuelta (abrir, guardar, sin cambios) | pendiente |
+| A3b | Tests de ida y vuelta (abrir, guardar, sin cambios) | hecho y verificado (PR #4) |
 | B4 | Org como formato por defecto | pendiente |
 | B5 | Propiedades nativas (`#+title`, `#+filetags`, `:ID:`) | pendiente |
 | B6 | Enlaces por ID `[[id:UUID][Título]]` | pendiente |
@@ -46,6 +46,19 @@ Fork de Logseq 0.10.15 (grafo de ficheros). Rama de trabajo: `mi-rama-0.10.15`.
 - Los logs de Actions no se pueden leer desde la sesión de trabajo: los workflows propios
   publican los errores como comentario en el PR.
 - El corrector `typos` trata todo como inglés; los ficheros en español están excluidos en `typos.toml`.
+
+## Hallazgos de A3b
+
+- Abrir y guardar sin editar conserva propiedades de página (`:PROPERTIES:`, `#+title`,
+  `#+filetags`), enlaces `[[id:...]]`, `TODO`, `SCHEDULED` y el cajón `:ID:` de bloque.
+- Se pierde la línea en blanco entre dos bloques de nivel 1 (`...página.\n\n* Bloque` pasa a
+  `...página.\n* Bloque`): `tree->file-content` recorta el contenido de cada bloque y los une
+  con un solo `\n`. No cambia el significado en org, pero el primer guardado de cualquier
+  página escrita a mano en Emacs genera diferencias de espacios en blanco.
+- Decisión de Eli (26-oct-2026): se acepta esa normalización. El test ignora solo las líneas
+  en blanco justo antes de una cabecera `* ...` y los saltos de línea finales; cualquier otra
+  diferencia (p. ej. líneas en blanco dentro de un bloque) sigue siendo un fallo.
+- Guardar es estable: lo guardado, al reabrirlo y guardarlo otra vez, no cambia más.
 
 ## Decisiones pendientes
 
