@@ -6,7 +6,7 @@
   a page (frontend.modules.file.core/tree->file-content), without editing
   anything. The result must be identical to the original file.
 
-  Accepted normalizations (see docs/eli/ROADMAP.md, "Hallazgos de A3b"):
+  Accepted normalizations (see docs/eli/ROADMAP.md, section Hallazgos de A3b):
   - trailing newlines at the end of the file;
   - blank lines right before a headline (`* ...`): Logseq trims every block
     and joins blocks with a single newline, so those lines are dropped.

@@ -62,7 +62,6 @@ Fork de Logseq 0.10.15 (grafo de ficheros). Rama de trabajo: `mi-rama-0.10.15`.
 
 ## Decisiones pendientes
 
-
 - Esquema de versiones del fork. El actualizador y `frontend.version` esperan semver
   estricto `X.Y.Z`; un sufijo como `-eli.1` rompería la comprobación.
 - Formato exacto de la hoja anual (se confirma al empezar la fase C).
