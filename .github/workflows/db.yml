@@ -3,13 +3,13 @@ name: logseq/db CI
 on:
   # Path filters ensure jobs only kick off if a change is made to db
   push:
-    branches: [master]
+    branches: [master, mi-rama-0.10.15]
     paths:
       - 'deps/db/**'
       - '.github/workflows/db.yml'
       - '!deps/db/**.md'
   pull_request:
-    branches: [master]
+    branches: [master, mi-rama-0.10.15]
     paths:
       - 'deps/db/**'
       - '.github/workflows/db.yml'

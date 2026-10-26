@@ -3,13 +3,13 @@ name: logseq/common CI
 on:
   # Path filters ensure jobs only kick off if a change is made to common
   push:
-    branches: [master]
+    branches: [master, mi-rama-0.10.15]
     paths:
       - 'deps/common/**'
       - '.github/workflows/logseq-common.yml'
       - '!deps/common/**.md'
   pull_request:
-    branches: [master]
+    branches: [master, mi-rama-0.10.15]
     paths:
       - 'deps/common/**'
       - '.github/workflows/logseq-common.yml'
