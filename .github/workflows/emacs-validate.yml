@@ -18,6 +18,10 @@ on:
       - '.github/workflows/emacs-validate.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   emacs-validate:
     runs-on: ubuntu-24.04
@@ -40,13 +44,21 @@ jobs:
       - name: Validate org files
         env:
           FIXTURES_DIR: test-fixtures/org
+          GH_TOKEN: ${{ github.token }}
         run: |
           set +e
           emacs --batch -l scripts/emacs/validate.el 2>&1 | tee emacs-output.txt
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
-            # Publish the output tail as an annotation so it can be read through the API
-            msg=$(tail -n 60 emacs-output.txt | sed -e 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
-            echo "::error title=Emacs validation failed::$msg"
+            {
+              echo '**Emacs validation failed** (last lines of the output):'
+              echo '```'
+              tail -n 60 emacs-output.txt
+              echo '```'
+            } > emacs-comment.md
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+                -F body=@emacs-comment.md || true
+            fi
           fi
           exit "$status"
