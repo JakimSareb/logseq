@@ -22,9 +22,9 @@ Fork de Logseq 0.10.15 (grafo de ficheros). Rama de trabajo: `mi-rama-0.10.15`.
 
 | Fase | Contenido | Estado |
 |------|-----------|--------|
-| A1 | CI en la rama del fork | hecho (pendiente de verificar en GitHub) |
+| A1 | CI en la rama del fork | hecho y verificado |
 | A2 | Actualizador apuntando al fork (no al Logseq original) | hecho |
-| A3 | Validación con Emacs + org-roam + org-ql en CI | en curso |
+| A3 | Validación con Emacs + org-roam + org-ql en CI | hecho y verificado |
 | A3b | Tests de ida y vuelta (abrir, guardar, sin cambios) | pendiente |
 | B4 | Org como formato por defecto | pendiente |
 | B5 | Propiedades nativas (`#+title`, `#+filetags`, `:ID:`) | pendiente |
@@ -34,6 +34,15 @@ Fork de Logseq 0.10.15 (grafo de ficheros). Rama de trabajo: `mi-rama-0.10.15`.
 | C9 | Diarios en hoja anual | pendiente (requiere diseño) |
 | D10 | Carpeta local / Dropbox (ficheros "conflicted copy") | pendiente |
 | E11-13 | org-roam-ui/dailies/journal, org-transclusion, pdf-tools + org-noter | pendiente |
+
+## Estado conocido del CI
+
+- `e2e-test` falla en el paso "Ensure static yarn.lock is up to date" también en la
+  rama original sin cambios (comprobado con el PR de referencia #2). No lo causa ningún
+  cambio del fork; hay que regenerar `static/yarn.lock` antes de poder fiarse de ese check.
+- Los logs de Actions no se pueden leer desde la sesión de trabajo: los workflows propios
+  publican los errores como comentario en el PR.
+- El corrector `typos` trata todo como inglés; los ficheros en español están excluidos en `typos.toml`.
 
 ## Decisiones pendientes
 
