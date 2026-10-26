@@ -28,7 +28,7 @@ Fork de Logseq 0.10.15 (grafo de ficheros). Rama de trabajo: `mi-rama-0.10.15`.
 | A2 | Actualizador apuntando al fork (no al Logseq original) | hecho |
 | A3 | Validación con Emacs + org-roam + org-ql en CI | hecho y verificado |
 | A4 | Publicación automática de la web en GitHub Pages | en curso |
-| A3b | Tests de ida y vuelta (abrir, guardar, sin cambios) | hecho al pasar los checks del PR #4 |
+| A3b | Tests de ida y vuelta (abrir, guardar, sin cambios) | hecho y verificado (PR #4) |
 | B4 | Org como formato por defecto | pendiente |
 | B5 | Propiedades nativas (`#+title`, `#+filetags`, `:ID:`) | pendiente |
 | B6 | Enlaces por ID `[[id:UUID][Título]]` | pendiente |
