@@ -30,6 +30,7 @@
             [frontend.util :as util]
             [frontend.util.cursor :as cursor]
             [frontend.util.fs :as fs-util]
+            [frontend.util.org-id :as org-id]
             [frontend.util.page-property :as page-property]
             [frontend.util.page :as page-util]
             [frontend.util.property :as property]
@@ -92,6 +93,37 @@
       :block/parent page
       :block/page page})))
 
+(defn native-org-header?
+  "New org pages (not journals, not whiteboards) get the header org-roam
+  expects: an `:ID:` property drawer followed by `#+title:` (ROADMAP 1.02)."
+  [format journal? whiteboard?]
+  (and (= :org (keyword format))
+       (not journal?)
+       (not whiteboard?)))
+
+(defn native-org-properties-block
+  "Header block of a new org page. Its uuid is the `:ID:` written in the file, which
+  is also what the graph parser assigns to the header block when it reads the file back."
+  [title page properties]
+  (let [block-id (db/new-block-id)
+        defaults (common-handler/get-page-default-properties title)
+        ps       (merge {:id (str block-id)} defaults properties)
+        keywords (page-property/insert-properties :org "" (dissoc ps :id))
+        refs     (gp-block/get-page-refs-from-properties properties
+                                                         (db/get-db (state/get-current-repo))
+                                                         (state/get-date-formatter)
+                                                         (state/get-config))]
+    {:block/uuid             block-id
+     :block/pre-block?       true
+     :block/properties       ps
+     :block/properties-order (keys ps)
+     :block/refs             refs
+     :block/left             page
+     :block/format           :org
+     :block/content          (org-id/page-header block-id keywords)
+     :block/parent           page
+     :block/page             page}))
+
 (defn- create-title-property?
   [journal? page-name]
   (and (not journal?)
@@ -102,7 +134,8 @@
   (when (:block/uuid page)
     (let [page-entity   [:block/uuid (:block/uuid page)]
           title         (util/get-page-original-name page)
-          create-title? (create-title-property? journal? title)
+          native?       (native-org-header? format journal? whiteboard?)
+          create-title? (or native? (create-title-property? journal? title))
           page          (merge page
                                (when (seq properties) {:block/properties properties})
                                (when whiteboard? {:block/type "whiteboard"}))
@@ -110,6 +143,9 @@
       (cond
         (not page-empty?)
         [page]
+
+        native?
+        [page (native-org-properties-block (build-title page) page-entity properties)]
 
         create-title?
         (let [properties-block (default-properties-block (build-title page) format page-entity properties)]
@@ -170,6 +206,7 @@
        (when create-first-block?
          (when (or
                 (db/page-empty? repo (:db/id (db/entity [:block/name page-name])))
+                (native-org-header? (or format (state/get-preferred-format)) journal? whiteboard?)
                 (create-title-property? journal? page-name))
            (editor-handler/api-insert-new-block! "" {:page page-name}))))
 

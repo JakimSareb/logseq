@@ -106,3 +106,38 @@
     (is (= (:block/type page) "whiteboard"))
     (is (= (:block/original-name page) "Foo"))
     (is (every? #(= (:block/parent %) {:block/name "foo"}) blocks))))
+
+;; ROADMAP 1.02: native org page header (:ID: drawer + #+title + #+filetags)
+
+(def org-header
+  ":PROPERTIES:
+:ID:       72289d9a-eb2f-427b-ad97-b605a4b8c59b
+:END:
+#+title: Mi página
+#+filetags: :uno:dos:
+
+Texto.
+
+* Bloque
+")
+
+(deftest org-filetags-are-page-tags
+  (let [page (-> (extract/extract "mi-pagina.org" org-header {}) :pages first)]
+    (is (= "Mi página" (:block/original-name page)))
+    (is (= #{"uno" "dos"}
+           (set (map :block/original-name (:block/tags page)))))))
+
+(deftest org-header-id-is-the-uuid-of-the-header-block
+  ;; Links `[[id:UUID][Title]]` point at this block; the page is reached through it.
+  (let [{:keys [blocks]} (extract/extract "mi-pagina.org" org-header {})
+        pre-block (first blocks)]
+    (is (true? (:block/pre-block? pre-block)))
+    (is (= #uuid "72289d9a-eb2f-427b-ad97-b605a4b8c59b" (:block/uuid pre-block)))))
+
+(deftest org-id-links-are-refs-to-the-target-uuid
+  (let [{:keys [blocks]} (extract/extract
+                          "b.org"
+                          "#+title: B\n\n* Enlace a [[id:72289d9a-eb2f-427b-ad97-b605a4b8c59b][Mi página]]\n"
+                          {})
+        refs (set (mapcat :block/refs blocks))]
+    (is (contains? refs [:block/uuid #uuid "72289d9a-eb2f-427b-ad97-b605a4b8c59b"]))))

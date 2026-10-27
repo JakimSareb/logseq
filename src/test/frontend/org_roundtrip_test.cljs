@@ -22,7 +22,9 @@
             [frontend.modules.file.core :as file-core]
             [frontend.modules.outliner.tree :as tree]
             [frontend.config :as config]
+            [frontend.handler.page :as page-handler]
             [frontend.state :as state]
+            [frontend.util.page-property :as page-property]
             [frontend.test.helper :as test-helper]
             ["fs" :as fs]
             ["path" :as node-path]))
@@ -117,3 +119,32 @@
   (let [template (str (fs/readFileSync "src/resources/templates/config.edn"))]
     (is (re-find #"(?m)^ :preferred-format \"Org\"" template)
         "the default config.edn must set :preferred-format \"Org\"")))
+
+;; B5 / 1.02: native header for org pages
+
+(deftest new-page-header-is-read-back-with-the-same-id
+  (let [header-block (page-handler/native-org-properties-block "Mi página" [:block/name "mi página"] nil)
+        content (:block/content header-block)
+        id (:block/uuid header-block)]
+    (testing "the header is a property drawer with the id, followed by the title"
+      (is (string/starts-with? content (str ":PROPERTIES:\n:ID:       " id "\n:END:\n")))
+      (is (string/ends-with? content "#+title: Mi página")))
+    (testing "the graph parser gives the page its title and the header block the same id"
+      (test-helper/load-test-files [{:file/path "pages/mi-pagina.org"
+                                     :file/content (str content "\n\n* Un bloque\n")}])
+      (let [db (conn/get-db test-helper/test-db)
+            header (d/entity db [:block/uuid id])]
+        (is (some? header))
+        (is (true? (:block/pre-block? header)))
+        (is (= "mi página" (:block/name (:block/page header))))))))
+
+(deftest only-new-org-pages-get-the-native-header
+  (is (true? (page-handler/native-org-header? :org false false)))
+  (is (false? (page-handler/native-org-header? :markdown false false)))
+  (is (false? (page-handler/native-org-header? :org true false)) "journals keep their own format")
+  (is (false? (page-handler/native-org-header? :org false true)) "whiteboards are not org pages"))
+
+(deftest ensure-id-returns-the-id-of-the-file
+  (test-helper/load-test-files (read-fixtures))
+  (is (= "0004dbd9-bb4a-4cdd-87f2-e5b796a6d497"
+         (page-property/ensure-id! "Página de ejemplo"))))
