@@ -21,6 +21,8 @@
             [frontend.db.conn :as conn]
             [frontend.modules.file.core :as file-core]
             [frontend.modules.outliner.tree :as tree]
+            [frontend.config :as config]
+            [frontend.state :as state]
             [frontend.test.helper :as test-helper]
             ["fs" :as fs]
             ["path" :as node-path]))
@@ -92,3 +94,26 @@
         (testing path
           (is (= (normalize content)
                  (some-> (save-file-content path) normalize))))))))
+
+;; B4 / 1.01: org is the default format
+
+(deftest org-is-the-default-format
+  (let [previous (get-in @state/state [:me :preferred_format])]
+    (try
+      ;; the test runner pins markdown for the older tests: remove it to see the real default
+      (swap! state/state update :me dissoc :preferred_format)
+      (testing "no graph config and no user setting"
+        (is (= :org (state/get-preferred-format)))
+        (is (= "org" (config/get-file-extension (state/get-preferred-format)))))
+      (testing "an explicit setting still wins"
+        (state/set-preferred-format! :markdown)
+        (is (= :markdown (state/get-preferred-format))))
+      (finally
+        (if previous
+          (state/set-preferred-format! previous)
+          (swap! state/state update :me dissoc :preferred_format))))))
+
+(deftest new-graphs-get-an-org-config
+  (let [template (str (fs/readFileSync "src/resources/templates/config.edn"))]
+    (is (re-find #"(?m)^ :preferred-format \"Org\"" template)
+        "the default config.edn must set :preferred-format \"Org\"")))

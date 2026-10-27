@@ -32,7 +32,7 @@ versión (ver "Cómo se trabaja con versiones" más abajo).
 | 1.0 | A3 | Validación con Emacs + org-roam + org-ql en CI | hecho y verificado |
 | 1.0 | A3b | Tests de ida y vuelta (abrir, guardar, sin cambios) | hecho y verificado (PR #4) |
 | 1.0 | A4 | Publicación automática de la web en GitHub Pages | despliegue manual correcto el 26-oct; falta confirmar el automático al fusionar |
-| 1.01 | B4 | Org como formato por defecto (y ampliar fixtures: subniveles, DEADLINE, etiquetas de cabecera) | pendiente |
+| 1.01 | B4 | Org como formato por defecto (y ampliar fixtures: subniveles, DEADLINE, etiquetas de cabecera) | hecho |
 | 1.02 | B5 | Propiedades nativas (`#+title`, `#+filetags`, `:ID:`) | pendiente |
 | 1.03 | B6 | Enlaces por ID `[[id:UUID][Título]]` | pendiente |
 | 1.04 | B7 | Conversor en Ajustes | pendiente |

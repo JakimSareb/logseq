@@ -1,0 +1,22 @@
+:PROPERTIES:
+:ID:       58d6e054-340e-4e8e-b850-97b97da9fdf4
+:END:
+#+title: Niveles y fechas
+#+filetags: :ejemplo:niveles:
+
+Introducción de la página, antes del primer bloque.
+
+* TODO Proyecto con subniveles :trabajo:
+DEADLINE: <2026-11-15 Sun>
+:PROPERTIES:
+:ID:       374c19e0-7267-4e9a-8441-67ad5925387e
+:END:
+Descripción del proyecto.
+** TODO Subtarea con fechas :urgente:
+SCHEDULED: <2026-10-28 Wed> DEADLINE: <2026-11-02 Mon>
+*** Detalle de la subtarea
+Texto en el tercer nivel.
+** DONE Subtarea terminada
+Texto de la subtarea terminada.
+* Bloque con etiquetas :a:b:
+Texto del bloque con etiquetas de cabecera.
