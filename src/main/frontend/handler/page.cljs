@@ -163,12 +163,14 @@
    :redirect?           - when true, redirect to the created page, otherwise return sanitized page name.
    :split-namespace?    - when true, split hierarchical namespace into levels.
    :create-first-block? - when true, create an empty block if the page is empty.
+   :edit-first-block?   - when true (default), put the cursor in that first block.
    :uuid                - when set, use this uuid instead of generating a new one."
   ([title]
    (create! title {}))
-  ([title {:keys [redirect? create-first-block? format properties split-namespace? journal? uuid whiteboard?]
+  ([title {:keys [redirect? create-first-block? edit-first-block? format properties split-namespace? journal? uuid whiteboard?]
            :or   {redirect?           true
                   create-first-block? true
+                  edit-first-block?   true
                   format              nil
                   properties          nil
                   split-namespace?    true
@@ -208,7 +210,8 @@
                 (db/page-empty? repo (:db/id (db/entity [:block/name page-name])))
                 (native-org-header? (or format (state/get-preferred-format)) journal? whiteboard?)
                 (create-title-property? journal? page-name))
-           (editor-handler/api-insert-new-block! "" {:page page-name}))))
+           (editor-handler/api-insert-new-block! "" {:page page-name
+                                                     :edit-block? edit-first-block?}))))
 
      (when redirect?
        (route-handler/redirect-to-page! page-name))
@@ -719,6 +722,31 @@
   [page-name value]
   (page-property/add-property! page-name :public value))
 
+(defn org-id-link-text
+  "`[[id:UUID][Title]]` for a page, when `format` is org (ROADMAP 1.03).
+  The page is created when it does not exist yet, and gets an `:ID:` when it has
+  none, so the link always has a target in the file system (what org-roam needs).
+  Journals keep plain `[[Date]]` links until the journal format changes (1.06).
+  Returns nil when an id link does not apply or something fails."
+  [format page-title]
+  (when (and (= :org (keyword (or format "")))
+             (string? page-title)
+             (not (string/blank? page-title))
+             (not (date/valid-journal-title? page-title)))
+    (try
+      (let [repo      (state/get-current-repo)
+            page-name (util/page-name-sanity-lc page-title)]
+        (when (db/page-empty? repo page-name)
+          (create! page-title {:redirect?           false
+                               :edit-first-block?   false
+                               :format              :org}))
+        (when-let [page-id (page-property/ensure-id! page-name)]
+          (let [page (db/entity [:block/name page-name])]
+            (org-id/id-link page-id (or (:block/original-name page) page-title)))))
+      (catch :default e
+        (log/error :page/org-id-link {:page page-title :error e})
+        nil))))
+
 (defn get-page-ref-text
   [page]
   (let [edit-block-file-path (model/get-block-file-path (state/get-edit-block))
@@ -745,7 +773,10 @@
           (util/format "[[file:%s][%s]]"
                        (util/get-relative-path edit-block-file-path ref-file-path)
                        page)))
-      (page-ref/->page-ref page))))
+      (or (org-id-link-text (or (:block/format (state/get-edit-block))
+                                (state/get-preferred-format))
+                            page)
+          (page-ref/->page-ref page)))))
 
 (defn init-commands!
   []
@@ -830,6 +861,8 @@
       (fn [chosen _click?]
         (state/clear-editor-action!)
         (let [wrapped? (= page-ref/left-brackets (gp-util/safe-subs edit-content (- pos 2) pos))
+              ;; org: `#tag` becomes a link by id, like any other page link
+              id-link (when-not wrapped? (org-id-link-text format chosen))
               chosen (if (and (util/safe-re-find #"\s+" chosen) (not wrapped?))
                        (page-ref/->page-ref chosen)
                        chosen)
@@ -841,7 +874,8 @@
                                q))
               last-pattern (str "#" (when wrapped? page-ref/left-brackets) last-pattern)]
           (editor-handler/insert-command! id
-                                          (str "#" (when wrapped? page-ref/left-brackets) chosen)
+                                          (or id-link
+                                              (str "#" (when wrapped? page-ref/left-brackets) chosen))
                                           format
                                           {:last-pattern last-pattern
                                            :end-pattern (when wrapped? page-ref/right-brackets)

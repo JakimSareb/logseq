@@ -329,6 +329,24 @@ independent of format as format specific heading characters are stripped"
      (set)
      (set/union #{page-id}))))
 
+(defn- page-header-block-ids
+  "Entity ids of the header blocks (the ones that hold the org `:ID:`) of the given
+  pages. `[[id:UUID][Title]]` links reference that block, not the page (ROADMAP 1.03)."
+  [db page-ids]
+  (when (and db (seq page-ids))
+    (d/q '[:find [?b ...]
+           :in $ [?p ...]
+           :where
+           [?b :block/page ?p]
+           [?b :block/pre-block? true]]
+         db
+         page-ids)))
+
+(defn get-page-header-block-ids
+  "Set of entity ids of the header blocks of a page and its aliases."
+  [repo page]
+  (set (page-header-block-ids (conn/get-db repo) (page-alias-set repo page))))
+
 (defn get-entities-by-ids
   ([ids]
    (get-entities-by-ids (state/get-current-repo) ids))
@@ -1124,7 +1142,12 @@ independent of format as format specific heading characters are stripped"
                        [(untuple ?pages) [?page ...]]
                        [?block :block/page ?page]
                        [?block :block/refs ?ref-page]
-                       [?ref-page :block/name ?ref-page-name]]
+                       ;; a page, or the header block of a page (org `[[id:UUID][Title]]` links)
+                       (or-join [?ref-page ?ref-page-name]
+                                [?ref-page :block/name ?ref-page-name]
+                                (and [?ref-page :block/pre-block? true]
+                                     [?ref-page :block/page ?ref-owner]
+                                     [?ref-owner :block/name ?ref-page-name]))]
                      db
                      pages)]
       (mapv (fn [page] [page (get-page-alias repo page)]) ref-pages))))
@@ -1204,7 +1227,8 @@ independent of format as format specific heading characters are stripped"
   [repo page include-journals]
   (when (conn/get-db repo)
     (let [page-id (:db/id (db-utils/entity [:block/name (util/safe-page-name-sanity-lc page)]))
-          pages (page-alias-set repo page)
+          pages (set/union (page-alias-set repo page)
+                           (get-page-header-block-ids repo page))
           query-base '[:find ?mentioned-page-name
                        :in $ ?pages ?page-name
                        :where
@@ -1236,14 +1260,26 @@ independent of format as format specific heading characters are stripped"
              pages (page-alias-set repo page)
              aliases (set/difference pages #{page-id})]
          (->>
-          (d/q
-            '[:find [(pull ?block ?block-attrs) ...]
-              :in $ [?ref-page ...] ?block-attrs
-              :where
-              [?block :block/path-refs ?ref-page]]
-            db
-            pages
-            (butlast block-attrs))
+          (concat
+           (d/q
+             '[:find [(pull ?block ?block-attrs) ...]
+               :in $ [?ref-page ...] ?block-attrs
+               :where
+               [?block :block/path-refs ?ref-page]]
+             db
+             pages
+             (butlast block-attrs))
+           ;; org `[[id:UUID][Title]]` links point at the header block of the page
+           (when-let [header-ids (seq (page-header-block-ids db pages))]
+             (d/q
+               '[:find [(pull ?block ?block-attrs) ...]
+                 :in $ [?ref ...] ?block-attrs
+                 :where
+                 [?block :block/refs ?ref]]
+               db
+               header-ids
+               (butlast block-attrs))))
+          (distinct)
           (remove (fn [block] (= page-id (:db/id (:block/page block)))))
           db-utils/group-by-page
           (map (fn [[k blocks]]
@@ -1268,8 +1304,14 @@ independent of format as format specific heading characters are stripped"
             [:frontend.db.react/refs page-id]
             {:use-cache? false
              :query-fn (fn []
-                         (let [entities (mapcat (fn [id]
-                                                  (:block/_path-refs (db-utils/entity id))) pages)
+                         (let [entities (distinct
+                                         (concat
+                                          (mapcat (fn [id]
+                                                    (:block/_path-refs (db-utils/entity id))) pages)
+                                          ;; org `[[id:UUID][Title]]` links point at the header block of the page
+                                          (mapcat (fn [id]
+                                                    (:block/_refs (db-utils/entity id)))
+                                                  (page-header-block-ids (conn/get-db repo) pages))))
                                blocks (map (fn [e]
                                              {:block/parent (:block/parent e)
                                               :block/left (:block/left e)

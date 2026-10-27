@@ -19,6 +19,7 @@
             [datascript.core :as d]
             [frontend.db :as db]
             [frontend.db.conn :as conn]
+            [frontend.db.model :as model]
             [frontend.modules.file.core :as file-core]
             [frontend.modules.outliner.tree :as tree]
             [frontend.config :as config]
@@ -148,3 +149,25 @@
   (test-helper/load-test-files (read-fixtures))
   (is (= "0004dbd9-bb4a-4cdd-87f2-e5b796a6d497"
          (page-property/ensure-id! "Página de ejemplo"))))
+
+;; B6 / 1.03: links by id
+
+(deftest id-links-are-only-written-for-org
+  (is (nil? (page-handler/org-id-link-text :markdown "Mi página")))
+  (is (nil? (page-handler/org-id-link-text :org ""))))
+
+(deftest id-links-count-as-references-to-the-page
+  ;; otra-pagina.org links to pagina-ejemplo.org with [[id:0004dbd9-...][Página de ejemplo]]
+  (test-helper/load-test-files (read-fixtures))
+  (testing "the page that holds the link mentions the target page"
+    (is (contains? (set (map first (model/get-pages-that-mentioned-page
+                                    test-helper/test-db "página de ejemplo" true)))
+                   "otra página")))
+  (testing "its blocks are listed as linked references of the target page"
+    (is (contains? (set (map (comp :block/name :block/page)
+                             (model/get-page-referenced-blocks "página de ejemplo")))
+                   "otra página")))
+  (testing "the target page is among the pages the linking page refers to"
+    (is (contains? (set (map first (model/get-page-referenced-pages
+                                    test-helper/test-db "otra página")))
+                   "página de ejemplo"))))
