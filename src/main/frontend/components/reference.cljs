@@ -1,5 +1,6 @@
 (ns frontend.components.reference
-  (:require [clojure.string :as string]
+  (:require [clojure.set :as set]
+            [clojure.string :as string]
             [frontend.components.block :as block]
             [frontend.components.content :as content]
             [frontend.components.editor :as editor]
@@ -203,7 +204,9 @@
           filter-state (rum/react filters-atom)
           ref-blocks (db/get-page-referenced-blocks page-name)
           page-id (:db/id (db/entity repo [:block/name page-name]))
-          aliases (db/page-alias-set repo page-name)
+          ;; plus the header block of the page: org `[[id:UUID][Title]]` links point at it
+          aliases (set/union (db/page-alias-set repo page-name)
+                             (db/get-page-header-block-ids repo page-name))
           aliases-exclude-self (set (remove #{page-id} aliases))
           top-level-blocks (filter (fn [b] (some aliases (set (map :db/id (:block/refs b))))) ref-blocks)
           top-level-blocks-ids (set (map :db/id top-level-blocks))

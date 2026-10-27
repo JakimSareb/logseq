@@ -32,9 +32,9 @@ versión (ver "Cómo se trabaja con versiones" más abajo).
 | 1.0 | A3 | Validación con Emacs + org-roam + org-ql en CI | hecho y verificado |
 | 1.0 | A3b | Tests de ida y vuelta (abrir, guardar, sin cambios) | hecho y verificado (PR #4) |
 | 1.0 | A4 | Publicación automática de la web en GitHub Pages | despliegue manual correcto el 26-oct; falta confirmar el automático al fusionar |
-| 1.01 | B4 | Org como formato por defecto (y ampliar fixtures: subniveles, DEADLINE, etiquetas de cabecera) | pendiente |
-| 1.02 | B5 | Propiedades nativas (`#+title`, `#+filetags`, `:ID:`) | pendiente |
-| 1.03 | B6 | Enlaces por ID `[[id:UUID][Título]]` | pendiente |
+| 1.01 | B4 | Org como formato por defecto (y ampliar fixtures: subniveles, DEADLINE, etiquetas de cabecera) | hecho |
+| 1.02 | B5 | Propiedades nativas (`#+title`, `#+filetags`, `:ID:`) | hecho |
+| 1.03 | B6 | Enlaces por ID `[[id:UUID][Título]]` | hecho |
 | 1.04 | B7 | Conversor en Ajustes | pendiente |
 | 1.05 | B8 | TODO, SCHEDULED, DEADLINE, etiquetas de cabecera | pendiente |
 | 1.06 | C9 | Diarios en hoja anual compatible con org-journal | pendiente (formato decidido, ver abajo) |
@@ -101,6 +101,26 @@ Se puede pedir una versión suelta o un grupo distinto; estos son los recomendad
   en blanco justo antes de una cabecera `* ...` y los saltos de línea finales; cualquier otra
   diferencia (p. ej. líneas en blanco dentro de un bloque) sigue siendo un fallo.
 - Guardar es estable: lo guardado, al reabrirlo y guardarlo otra vez, no cambia más.
+
+## Hallazgos de 1.01-1.03
+
+- Formato por defecto: `state/default-preferred-format` es `"org"` y la plantilla `config.edn` de
+  grafos nuevos fija `:preferred-format "Org"`. El runner de tests (`frontend_node_test_runner`)
+  pone markdown para los tests antiguos; los tests del formato por defecto lo restablecen.
+- El `:ID:` del cajón de cabecera es el uuid del bloque de cabecera (así lo asigna ya el parser).
+  Los enlaces `[[id:UUID][Título]]` apuntan a ese bloque y la interfaz ya los pintaba como
+  enlace de página. No se cambió el uuid de la página: dos entidades con el mismo uuid o un
+  marcador de referencia previo a la página provocan conflictos de unicidad en Datascript al
+  cargar el grafo. En su lugar, las referencias entrantes (`model.cljs`, `reference.cljs`)
+  cuentan también los enlaces al bloque de cabecera.
+- Páginas org nuevas: `:PROPERTIES:` con `:ID:` primero y `#+title:` después (lo que org-roam
+  espera). `#+filetags` pasa a ser las etiquetas de la página (graph-parser).
+- Autocompletado: en org, elegir una página con `[[` o `#` inserta `[[id:UUID][Título]]`; la
+  página se crea, y recibe un `:ID:` si no lo tenía. Los diarios siguen con `[[fecha]]` hasta 1.06.
+- Limitaciones conocidas: la etiqueta de un enlace por ID no se actualiza al renombrar la página
+  (igual que en org-roam); la lista de referencias entrantes no se refresca en vivo al añadir un
+  enlace por ID hasta volver a abrir la página; la vista de grafo de Logseq no dibuja esos
+  enlaces; los `[[Página]]` y `#etiqueta` ya escritos se convertirán con el conversor (1.04).
 
 ## Decisiones pendientes
 

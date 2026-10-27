@@ -62,9 +62,23 @@
             file-name
             first-block-name)))))
 
+(defn- filetags->tags
+  "Org `#+filetags: :a:b:` as a list of tags. The value can arrive as one
+  string (\":a:b:\") or as an already split collection."
+  [filetags]
+  (->> (if (coll? filetags) filetags [filetags])
+       (filter string?)
+       (mapcat #(string/split % #":"))
+       (map string/trim)
+       (remove string/blank?)))
+
 (defn- extract-page-alias-and-tags
   [page-m page page-name properties]
-  (let [alias (:alias properties)
+  (let [;; org: `#+filetags:` are the tags of the page, like `tags::` in markdown
+        properties (if (and (not (:tags properties)) (:filetags properties))
+                     (assoc properties :tags (filetags->tags (:filetags properties)))
+                     properties)
+        alias (:alias properties)
         alias' (if (coll? alias) alias [(str alias)])
         aliases (and alias'
                      (seq (remove #(or (= page-name (gp-util/page-name-sanity-lc %))

@@ -5,7 +5,8 @@
             [frontend.modules.outliner.file :as outliner-file]
             [frontend.modules.outliner.transaction :as outliner-tx]
             [frontend.state :as state]
-            [frontend.util :as util]))
+            [frontend.util :as util]
+            [frontend.util.org-id :as org-id]))
 
 (defn insert-property
   [format content key value]
@@ -88,3 +89,50 @@
              :additional-tx page-properties-tx}
             (outliner-core/insert-blocks! block page {:sibling? false}))))
       (outliner-file/sync-to-file page-id))))
+
+(defn ensure-id!
+  "Org only. Returns the `:ID:` (uuid string) of a page, adding a file-level
+  property drawer to the page header when it has none (ROADMAP 1.02).
+
+  The id is the uuid of the header block: that is what the graph parser assigns
+  to the header block when it reads the `:ID:` back from the file, so
+  `[[id:UUID][Title]]` links resolve to the page header."
+  [page-name]
+  (when-let [page (db/pull [:block/name (util/page-name-sanity-lc page-name)])]
+    (let [repo (state/get-current-repo)
+          page-id {:db/id (:db/id page)}
+          pre-block (db/get-pre-block repo (:db/id page))
+          existing (some-> pre-block :block/properties :id str string/trim)]
+      (cond
+        (and existing (util/uuid-string? existing))
+        existing
+
+        pre-block
+        (let [id (:block/uuid pre-block)
+              properties (assoc (:block/properties pre-block) :id (str id))
+              block {:db/id (:db/id pre-block)
+                     :block/properties properties
+                     :block/content (org-id/add-id-to-header (:block/content pre-block) id)
+                     :block/page page-id}]
+          (db/transact! [(assoc page-id :block/properties properties)
+                         block])
+          (outliner-file/sync-to-file page-id)
+          (str id))
+
+        :else
+        (let [id (db/new-block-id)
+              properties {:id (str id)}
+              block {:block/uuid id
+                     :block/left page-id
+                     :block/parent page-id
+                     :block/page page-id
+                     :block/content (org-id/page-header id nil)
+                     :block/format :org
+                     :block/properties properties
+                     :block/pre-block? true}]
+          (outliner-tx/transact!
+           {:outliner-op :insert-blocks
+            :additional-tx [(assoc page-id :block/properties properties)]}
+           (outliner-core/insert-blocks! block page {:sibling? false}))
+          (outliner-file/sync-to-file page-id)
+          (str id))))))

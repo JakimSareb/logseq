@@ -444,6 +444,11 @@ should be done through this fn in order to get global config and config defaults
   []
   (some? (:page (get-default-home))))
 
+(def default-preferred-format
+  "Format used when neither the graph config nor the user settings set one.
+  Eli's fork is org-first (ROADMAP 1.01)."
+  "org")
+
 (defn get-preferred-format
   ([]
    (get-preferred-format (get-current-repo)))
@@ -453,7 +458,7 @@ should be done through this fn in order to get global config and config defaults
        (when-let [fmt (:preferred-format (get-config repo-url))]
          (string/lower-case (name fmt)))
 
-       (get-in @state [:me :preferred_format] "markdown")))))
+       (get-in @state [:me :preferred_format] default-preferred-format)))))
 
 (defn markdown?
   []

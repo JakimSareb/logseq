@@ -2,9 +2,9 @@
 
  ;; Set the preferred format.
  ;; Available options:
- ;; - Markdown (default)
- ;; - Org
- ;; :preferred-format "Markdown"
+ ;; - Markdown
+ ;; - Org (default in this fork)
+ :preferred-format "Org"
 
  ;; Set the preferred workflow style.
  ;; Available options:
